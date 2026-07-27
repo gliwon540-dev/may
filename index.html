@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAY 덕질 일기장 💚 (게왹이 Edition)</title>
+  <style>
+    :root {
+      --main-color: #bef67a; /* 라임 그린 */
+      --point-color: #00e676; /* 민트 초록 */
+      --bg-color: #f1f8e9; /* 연두빛 배경 */
+      --text-color: #1b5e20; /* 진한 초록 텍스트 */
+    }
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0; padding: 20px;
+      display: flex; justify-content: center;
+    }
+    .app-container {
+      width: 100%; max-width: 500px;
+      background: white; border-radius: 20px;
+      padding: 20px; box-shadow: 0 4px 15px rgba(27, 94, 32, 0.1);
+      border: 2px solid #a4f4a3;
+    }
+    .user-profile {
+      text-align: center; font-size: 14px; font-weight: bold; color: #43a047; margin-bottom: 5px;
+    }
+    h1 { text-align: center; color: var(--text-color); font-size: 22px; margin-top: 0; margin-bottom: 10px; text-shadow: 1px 1px 0 #bef67a; }
+    
+    .dday-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
+    .dday-banner {
+      background-color: #c5e1a5; border-radius: 12px;
+      padding: 8px 4px; text-align: center; font-weight: bold;
+      color: #1b5e20; font-size: 11px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .quote-card {
+      background: #f0f4c3; border: 1px dashed var(--point-color);
+      border-radius: 10px; padding: 10px 15px; text-align: center;
+      font-size: 13px; color: #33691e; margin-bottom: 15px;
+    }
+    
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .calendar-header button { background: #dcedc8; border: 1px solid #c5e1a5; border-radius: 5px; color: #1b5e20; font-weight:bold; padding: 4px 10px; cursor: pointer; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+    .day-name { font-weight: bold; color: #689f38; font-size: 12px; padding-bottom: 5px; }
+    .date-cell {
+      padding: 10px 0; border-radius: 10px; border: 1px solid #f1f8e9;
+      cursor: pointer; position: relative; font-size: 14px; color: #33691e;
+    }
+    .date-cell:hover { background-color: #dcedc8; }
+    .date-cell.selected { background-color: var(--main-color); font-weight: bold; color: #1b5e20; border: 2px solid var(--point-color); }
+    .has-diary::after { content: '👽'; display: block; font-size: 10px; margin-top: 2px; }
+    .is-jihoon-bday::after { content: '🎂'; display: block; font-size: 11px; margin-top: 2px; }
+    .is-my-bday::after { content: '👑'; display: block; font-size: 11px; margin-top: 2px; }
+
+    .diary-section { margin-top: 20px; border-top: 2px dashed #a4f4a3; padding-top: 15px; }
+    #selected-date-text { color: #1b5e20; font-size: 16px; margin-top: 0; }
+    .challenge-box {
+      background: #f1f8e9; border-left: 4px solid var(--point-color);
+      padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 12px; font-size: 14px; color: #1b5e20;
+    }
+    input[type="text"] {
+      width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #c5e1a5;
+      border-radius: 8px; box-sizing: border-box; font-family: inherit; color: #1b5e20;
+    }
+    textarea {
+      width: 100%; height: 90px; border: 1px solid #c5e1a5;
+      border-radius: 10px; padding: 10px; box-sizing: border-box;
+      resize: none; font-family: inherit; font-size: 14px; color: #1b5e20;
+    }
+    .btn-save {
+      width: 100%; padding: 12px; background: var(--main-color);
+      border: 2px solid var(--point-color); border-radius: 10px; font-weight: bold;
+      font-size: 15px; cursor: pointer; margin-top: 10px; color: #1b5e20;
+    }
+    .btn-save:hover { background: #a4f4a3; }
+    
+    .naver-section { margin-top: 25px; border-top: 2px solid #a4f4a3; padding-top: 15px; }
+    .naver-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .naver-title { font-size: 14px; font-weight: bold; color: #00c853; }
+    .btn-naver-link {
+      font-size: 11px; background: #00c853; color: white; border: none; padding: 4px 8px; border-radius: 5px; text-decoration: none; font-weight: bold;
+    }
+    .naver-frame { width: 100%; height: 280px; border: 1px solid #00c853; border-radius: 10px; box-sizing: border-box; }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // 🔴 본인의 Firebase 키 값으로 교체해 주세요
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    window.db = database;
+    window.dbRef = ref(database);
+    window.set = set;
+    window.get = get;
+    window.child = child;
+    window.ref = ref;
+  </script>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="user-profile">👑 지훈이 콜렉터님의 초록 공간 💚</div>
+  <h1>👽 MAY 덕질 일기장 👽</h1>
+  
+  <div class="dday-box">
+    <div class="dday-banner">
+      🐥 입덕 <span id="dday-count" style="color: #2e7d32; font-size: 14px;">32</span>일째
+    </div>
+    <div class="dday-banner" style="background-color: #dcedc8;">
+      🎂 지훈 D-<span id="bday-count" style="color: #d84315; font-size: 14px;">0</span>
+    </div>
+    <div class="dday-banner" style="background-color: #a4f4a3;">
+      👑 내 생일 D-<span id="my-bday-count" style="color: #006064; font-size: 14px;">0</span>
+    </div>
+  </div>
+
+  <div class="quote-card" id="quote-text">
+    ✨ "지훈이 콜렉터님, 오늘 하루도 초록초록한 게왹이 기운으로 파이팅!"
+  </div>
+
+  <div class="calendar-header">
+    <button onclick="changeMonth(-1)">◀ 이전달</button>
+    <h3 id="month-year" style="margin: 0; color: #1b5e20;"></h3>
+    <button onclick="changeMonth(1)">다음달 ▶</button>
+  </div>
+  <div class="calendar-grid" id="calendar"></div>
+
+  <div class="diary-section">
+    <h3 id="selected-date-text">📅 날짜를 선택해 주세요 👽</h3>
+    
+    <div class="challenge-box">
+      🎯 오늘의 10년 챌린지: <span id="challenge-text">날짜를 클릭해 주세요</span>
+    </div>
+
+    <input type="text" id="bgm-input" placeholder="🎵 오늘의 최애곡 (선택)">
+    <textarea id="diary-input" placeholder="오늘 지훈이와의 추억을 게왹 일기장에 적어보세요!"></textarea>
+    <button class="btn-save" onclick="saveDiary()">클라우드에 일기 저장하기 ✨</button>
+  </div>
+
+  <div class="naver-section">
+    <div class="naver-header">
+      <span class="naver-title">🔍 오늘 날짜 박지훈 네이버 검색</span>
+      <a id="naver-direct-btn" href="#" target="_blank" class="btn-naver-link">네이버 직접 보기 ↗</a>
+    </div>
+    <iframe id="naver-search-frame" class="naver-frame" src="about:blank"></iframe>
+  </div>
+</div>
+
+<script>
+  // 기준일: 2026년 7월 27일 오늘
+  const TODAY_BASE = new Date(2026, 6, 27);
+  let currentDate = new Date(TODAY_BASE.getFullYear(), TODAY_BASE.getMonth(), 1);
+  let selectedDateStr = "2026-07-27";
+
+  function calculateDdays() {
+    // 🟢 입덕 32일차 정확히 계산 (시작일 2026-06-26 기준)
+    const startDate = new Date(2026, 5, 26);
+    const diffTime = TODAY_BASE - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+    document.getElementById("dday-count").innerText = diffDays;
+
+    // 지훈이 생일 D-Day (5월 29일)
+    let bday = new Date(2026, 4, 29);
+    if (TODAY_BASE > bday) bday.setFullYear(2027);
+    const bdayDiff = Math.ceil((bday - TODAY_BASE) / (1000 * 60 * 60 * 24));
+    document.getElementById("bday-count").innerText = bdayDiff;
+
+    // 내 생일 D-Day (8월 9일)
+    let myBday = new Date(2026, 7, 9);
+    if (TODAY_BASE > myBday) myBday.setFullYear(2027);
+    const myBdayDiff = Math.ceil((myBday - TODAY_BASE) / (1000 * 60 * 60 * 24));
+    document.getElementById("my-bday-count").innerText = myBdayDiff;
+  }
+
+  const quotes = [
+    "✨ 지훈이 콜렉터님, 오늘도 게왹이처럼 톡톡 튀는 하루 되세요! 💚",
+    "🟢 오늘도 지훈이 얼굴 보며 에너지 충전 완료!",
+    "🐰 내 마음속에 저장~ 꾹!",
+    "👽 게왹게왹! 지훈이가 메이에게 보내는 하트 신호 발송!",
+    "🎶 오늘 들은 지훈이 노래가 내 삶의 에너지!"
+  ];
+
+  function setRandomQuote() {
+    const randomIdx = Math.floor(Math.random() * quotes.length);
+    document.getElementById("quote-text").innerText = quotes[randomIdx];
+  }
+
+  const challenges = [
+    "최애가 찍은 셀카 포즈 똑같이 따라 하고 사진 찍기 📸",
+    "최애의 레전드 무대 의상 착장 따라 입어보기 👔",
+    "최애의 시그니처 표정(윙크, 저장 등) 따라 하기 😉",
+    "최애가 방문했던 식당/카페 가서 같은 메뉴 먹기 🍽️",
+    "최애가 좋아하는 음식 오늘 저녁으로 먹기 😋",
+    "솔로 데뷔곡부터 최신곡까지 연속 재생 들으며 감상문 쓰기 🎧",
+    "최애의 레전드 직캠(Fancam) 다시 보기 🎥",
+    "최애가 출연한 드라마/영화 명대사 적어보기 🎬",
+    "최애 덕분에 변화한 나의 positive한 부분 적어보기 ✍️",
+    "최애의 이름으로 삼행시 지어보기 📝"
+  ];
+
+  async function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    document.getElementById("month-year").innerText = `${year}년 ${month + 1}월`;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    
+    const calendarEl = document.getElementById("calendar");
+    calendarEl.innerHTML = "";
+
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    dayNames.forEach(d => { calendarEl.innerHTML += `<div class="day-name">${d}</div>`; });
+
+    for (let i = 0; i < firstDay; i++) { calendarEl.innerHTML += `<div></div>`; }
+
+    let monthData = {};
+    if (window.dbRef) {
+      try {
+        const snapshot = await window.get(window.child(window.dbRef, `diaries/`));
+        if (snapshot.exists()) monthData = snapshot.val();
+      } catch (e) { console.log("데이터 로드 중...", e); }
+    }
+
+    for (let date = 1; date <= lastDate; date++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+      
+      const isJihoonBday = (month === 4 && date === 29) ? 'is-jihoon-bday' : '';
+      const isMyBday = (month === 7 && date === 9) ? 'is-my-bday' : '';
+      const hasDiary = monthData[dateStr] ? 'has-diary' : '';
+      const isSelected = selectedDateStr === dateStr ? 'selected' : '';
+
+      calendarEl.innerHTML += `
+        <div class="date-cell ${hasDiary} ${isJihoonBday} ${isMyBday} ${isSelected}" onclick="selectDate('${dateStr}', ${date})">
+          ${date}
+        </div>
+      `;
+    }
+  }
+
+  function changeMonth(diff) {
+    currentDate.setMonth(currentDate.getMonth() + diff);
+    renderCalendar();
+  }
+
+  async function selectDate(dateStr, date) {
+    selectedDateStr = dateStr;
+    document.getElementById("selected-date-text").innerText = `📅 ${dateStr} 게왹 일기 👽`;
+
+    const daySeed = parseInt(dateStr.replace(/-/g, ""));
+    const challengeIndex = daySeed % challenges.length;
+    document.getElementById("challenge-text").innerText = challenges[challengeIndex];
+
+    const searchQuery = encodeURIComponent(`${dateStr} 박지훈`);
+    const naverUrl = `https://m.search.naver.com/search.naver?query=${searchQuery}`;
+    document.getElementById("naver-search-frame").src = naverUrl;
+    document.getElementById("naver-direct-btn").href = naverUrl;
+
+    try {
+      if (window.dbRef) {
+        const snapshot = await window.get(window.child(window.dbRef, `diaries/${dateStr}`));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          document.getElementById("diary-input").value = data.text || "";
+          document.getElementById("bgm-input").value = data.bgm || "";
+        } else {
+          document.getElementById("diary-input").value = "";
+          document.getElementById("bgm-input").value = "";
+        }
+      }
+    } catch (e) { console.error(e); }
+
+    renderCalendar();
+  }
+
+  async function saveDiary() {
+    if (!selectedDateStr) { alert("먼저 날짜를 선택해 주세요! 👽"); return; }
+    const text = document.getElementById("diary-input").value;
+    const bgm = document.getElementById("bgm-input").value;
+
+    try {
+      if (window.db) {
+        await window.set(window.ref(window.db, `diaries/${selectedDateStr}`), {
+          text: text,
+          bgm: bgm,
+          updatedAt: new Date().toISOString()
+        });
+        alert("지훈이 콜렉터님의 일기가 클라우드에 연동되었습니다! 게왹! 💚");
+        renderCalendar();
+      } else {
+        alert("Firebase 설정이 올바르게 연결되지 않았습니다. API Key를 확인해 주세요.");
+      }
+    } catch (e) { alert("저장 중 오류가 발생했습니다: " + e.message); }
+  }
+
+  calculateDdays();
+  setRandomQuote();
+  
+  window.onload = () => {
+    selectDate("2026-07-27", 27);
+  };
+</script>
+
+</body>
+</html>
